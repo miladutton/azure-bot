@@ -1,0 +1,15 @@
+import os
+import azure.cognitiveservices.speech as speechsdk
+
+def test_speech_sdk():
+    speech_key = os.getenv("AZURE_SPEECH_KEY")
+    region = os.getenv("AZURE_REGION")
+
+    if not speech_key or not region:
+        print("Azure Speech Key or Region is not set.")
+        return
+
+    speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=region)
+    print("Azure Speech Config initialized successfully!")
+
+test_speech_sdk()
