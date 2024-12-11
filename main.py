@@ -19,39 +19,21 @@ def run_friendly_bot():
 def run_bot(agent_type):
     """
     Runs the selected bot based on agent_type ('professional', 'moderate', 'friendly').
-    Initializes the Azure Speech SDK and processes the bot response.
     """
     # Initialize Azure Speech SDK
     speech_key = os.getenv("AZURE_SPEECH_KEY")
     region = os.getenv("AZURE_REGION")
 
-    if not speech_key or not region:
-        error_message = "Azure Speech Key or Region is not set."
-        print(error_message)
-        return {"error": error_message}
-
     print(f"Speech Key: {speech_key}")  # Debugging print to check if the key is correct
     print(f"Region: {region}")  # Debugging print to check if the region is correct
 
-    try:
-        speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=region)
-        print("Azure Speech Config initialized successfully!")  # Confirm that Speech SDK is initialized
-    except Exception as e:
-        error_message = f"Error initializing Azure Speech SDK: {str(e)}"
-        print(error_message)
-        return {"error": error_message}
+    if not speech_key or not region:
+        print("Azure Speech Key or Region is not set.")
+        return
 
-    # Based on the agent_type, run different bot responses
-    if agent_type == "professional":
-        return {"response": "Running professional agent..."}
-    elif agent_type == "moderate":
-        return {"response": "Running moderate agent..."}
-    elif agent_type == "friendly":
-        return {"response": "Running friendly agent..."}
-    else:
-        error_message = "Invalid agent type. Choose 'professional', 'moderate', or 'friendly'."
-        print(error_message)
-        return {"error": error_message}
+    speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=region)
+    print("Azure Speech Config initialized successfully!")  # Confirm that Speech SDK is initialized
+
 
     # Select the appropriate bot
     if agent_type == "professional":
@@ -87,9 +69,10 @@ def run_bot(agent_type):
     else:
         raise ValueError("Invalid agent type. Choose 'professional', 'moderate', or 'friendly'.")
 
+
     # Start the session with a greeting
     print("before") 
-    speak_text(speech_config, "Hello, welcome to the {agent_type} bot session. I will ask you some questions.", 
+    speak_text(speech_config,"Hello, welcome to this session. I will ask you some questions.",
                style=style, pitch=pitch, rate=rate)
     print("after")
 
@@ -99,7 +82,7 @@ def run_bot(agent_type):
         question = bot.get_next_question()  # Assuming your bot logic provides these questions
         if question is None:
             print("No more questions.")  # Debugging output to confirm end of session
-            speak_text(speech_config, "Thank you for completing this session. Your responses are greatly appreciated.", 
+            speak_text(speech_config, "Thank you for completing this session. Your responses are greatly appreciated.",
                        style=style, pitch=pitch, rate=rate)
             break
 
