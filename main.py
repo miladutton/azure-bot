@@ -5,130 +5,89 @@ from bot_logic.moderate_bot import ModerateBot
 from bot_logic.casual_bot import CasualBot
 from speech.text_to_speech import speak_text
 from speech.speech_to_text import recognize_speech
-import time
+
 
 def run_professional_bot():
-    run_bot("professional")
+    return run_bot("professional")
+
 
 def run_moderate_bot():
-    run_bot("moderate")
+    return run_bot("moderate")
+
 
 def run_friendly_bot():
-    run_bot("friendly")
+    return run_bot("friendly")
+
 
 def run_bot(agent_type):
     """
     Runs the selected bot based on agent_type ('professional', 'moderate', 'friendly').
+    Continuously listens for user responses and prints them to the terminal.
     """
     # Initialize Azure Speech SDK
     speech_key = os.getenv("AZURE_SPEECH_KEY")
     region = os.getenv("AZURE_REGION")
 
-    print(f"Speech Key: {speech_key}")  # Debugging print to check if the key is correct
-    print(f"Region: {region}")  # Debugging print to check if the region is correct
-
     if not speech_key or not region:
-        print("Azure Speech Key or Region is not set.")
-        return
+        return {"error": "Azure Speech Key or Region is not set."}
 
     speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=region)
-    print("Azure Speech Config initialized successfully!")  # Confirm that Speech SDK is initialized
 
-
-    # Select the appropriate bot
+    # Select the appropriate bot and settings
     if agent_type == "professional":
         bot = ProfessionalBot()
-        style, pitch, rate = "neutral", "0%", "0.9"  # Professional tone
-        pauses = {"commas": 0.2, "periods": 0.4}  # Deliberate pauses
-        volume = "medium"
-        articulation = "crisp"
-        vocabulary = ["formal", "business-oriented"]
-        sentence_end = "neutral"
-        emotion = "minimal"
-
+        style, pitch, rate = "newscast", "0%", "0.9"
     elif agent_type == "moderate":
         bot = ModerateBot()
-        style, pitch, rate = "calm", "+5%", "1.0"  # Moderate tone
-        pauses = {"commas": 0.15, "periods": 0.3}  # Balanced pauses
-        volume = "medium-soft"
-        articulation = "smooth"
-        vocabulary = ["simple", "accessible"]
-        sentence_end = "balanced"
-        emotion = "subtle"
-
+        style, pitch, rate = "calm", "+2%", "1.0"
     elif agent_type == "friendly":
         bot = CasualBot()
-        style, pitch, rate = "cheerful", "+10%", "1.2"  # Friendly tone
-        pauses = {"commas": 0.1, "periods": 0.2}  # Shorter pauses
-        volume = "medium-loud"
-        articulation = "relaxed"
-        vocabulary = ["informal", "friendly", "light humor"]
-        sentence_end = "upbeat"
-        emotion = "expressive"
-
+        style, pitch, rate = "friendly", "+5%", "1.2"
     else:
-        raise ValueError("Invalid agent type. Choose 'professional', 'moderate', or 'friendly'.")
+        return {"error": "Invalid agent type. Choose 'professional', 'moderate', or 'friendly'."}
 
-
-    # Start the session with a greeting
-    print("before") 
-    speak_text(speech_config,"Hello, welcome to this session. I will ask you some questions.",
-               style=style, pitch=pitch, rate=rate)
-    print("after")
+    # Initialize session
+    questions_and_responses = []
+    speak_text(
+        speech_config,
+        "Hello, welcome to this session. I will ask you some questions.",
+        style=style, pitch=pitch, rate=rate,
+    )
 
     while True:
-        # Ask the next question
-        print("Asking next question...")  # Debugging print to check if loop is running
-        question = bot.get_next_question()  # Assuming your bot logic provides these questions
+        # Get the next question from the bot
+        question = bot.get_next_question()
         if question is None:
-            print("No more questions.")  # Debugging output to confirm end of session
-            speak_text(speech_config, "Thank you for completing this session. Your responses are greatly appreciated.",
-                       style=style, pitch=pitch, rate=rate)
+            speak_text(
+                speech_config,
+                "Thank you for completing this session. Your responses are greatly appreciated.",
+                style=style, pitch=pitch, rate=rate,
+            )
             break
 
         # Speak the question
-        print(f"Asking: {question}")  # Debugging output to ensure it's being triggered
         speak_text(speech_config, question, style=style, pitch=pitch, rate=rate)
+        print(f"Asking: {question}")  # Debugging output
 
-        # Capture user response using Speech-to-Text
-        print("Listening for user response...")  # Debugging output
+        # Listen for user response
         user_response = recognize_speech()
-
         if not user_response:
-            print("No response detected.")  # Debugging output if no response is detected
-            speak_text(speech_config, "Sorry, I didn't catch that. Could you please repeat?", style=style, pitch=pitch, rate=rate)
-        elif user_response.lower() in ["i don't know", "not sure"]:
-            print("User responded with unclear input.")  # Debugging output for unclear input
-            error_message = bot.handle_error()
-            speak_text(speech_config, error_message, style=style, pitch=pitch, rate=rate)
-        else:
-            print(f"User said: {user_response}")  # Debugging output to print the user's response
-            speak_text(speech_config, "Thank you for your response.", style=style, pitch=pitch, rate=rate)
+            user_response = "No response detected."
+            speak_text(speech_config, "Sorry, I didn't catch that.", style=style, pitch=pitch, rate=rate)
 
-def safe_recognize_speech():
-    retries = 3
-    for attempt in range(retries):
-        try:
-            print(f"Attempt {attempt + 1} to recognize speech...")  # Debugging output for retry attempt
-            user_response = recognize_speech()
-            if user_response:
-                return user_response
-            else:
-                print("No speech detected, retrying...")  # Debugging output if speech not detected
-        except Exception as e:
-            print(f"Error on attempt {attempt + 1}: {e}")  # Debugging output for error during recognition
-        time.sleep(2)  # Wait for 2 seconds before retrying
-    return None  # Return None if all attempts fail
+        # Store the question and response
+        questions_and_responses.append({"question": question, "response": user_response})
+        print(f"User said: {user_response}")  # Output user response to terminal
+
+    return {"questions_and_responses": questions_and_responses}
+
 
 if __name__ == "__main__":
+    # Local testing
     agent_type = input("Choose agent type (professional, moderate, friendly): ").strip().lower()
 
-    # Based on the agent type, call the appropriate main function
-    if agent_type == "professional":
-        run_professional_bot()
-    elif agent_type == "moderate":
-        run_moderate_bot()
-    elif agent_type == "friendly":
-        run_friendly_bot()
+    if agent_type in ["professional", "moderate", "friendly"]:
+        result = run_bot(agent_type)
+        print(result)
     else:
         print("Invalid selection. Please choose from 'professional', 'moderate', or 'friendly'.")
