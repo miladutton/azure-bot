@@ -15,7 +15,10 @@
         <br><br>
         <button type="submit">Start Interaction</button>
     </form>
-    <div id="response"></div>
+    <div id="response">
+        <h2>Conversation:</h2>
+        <ul id="conversation-list"></ul>
+    </div>
 
     <script>
         const form = document.getElementById('bot-form');
@@ -29,7 +32,19 @@
                 body: JSON.stringify({ agent_type: agentType })
             });
             const result = await response.json();
-            document.getElementById('response').innerText = result.message || result.error;
+
+            const conversationList = document.getElementById('conversation-list');
+            conversationList.innerHTML = ""; // Clear previous conversations
+
+            if (result.questions_and_responses) {
+                result.questions_and_responses.forEach((entry) => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `Q: ${entry.question} - A: ${entry.response}`;
+                    conversationList.appendChild(listItem);
+                });
+            } else {
+                conversationList.innerHTML = `<li>${result.error || "Error occurred"}</li>`;
+            }
         };
     </script>
 </body>

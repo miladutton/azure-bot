@@ -21,7 +21,7 @@ def bot_interaction():
     else:
         return jsonify({"error": "Invalid agent type. Choose 'professional', 'moderate', or 'friendly'."}), 400
 
-    return jsonify(response)  # Return the bot's output as JSON
+    return jsonify(response)  # Return the bot's session data as JSON
 
 
 if __name__ == "__main__":

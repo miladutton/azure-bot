@@ -6,23 +6,19 @@ from bot_logic.casual_bot import CasualBot
 from speech.text_to_speech import speak_text
 from speech.speech_to_text import recognize_speech
 
-
 def run_professional_bot():
     return run_bot("professional")
-
 
 def run_moderate_bot():
     return run_bot("moderate")
 
-
 def run_friendly_bot():
     return run_bot("friendly")
-
 
 def run_bot(agent_type):
     """
     Runs the selected bot based on agent_type ('professional', 'moderate', 'friendly').
-    Continuously listens for user responses and prints them to the terminal.
+    Continuously listens for user responses and returns session data.
     """
     # Initialize Azure Speech SDK
     speech_key = os.getenv("AZURE_SPEECH_KEY")
@@ -79,8 +75,10 @@ def run_bot(agent_type):
         questions_and_responses.append({"question": question, "response": user_response})
         print(f"User said: {user_response}")  # Output user response to terminal
 
-    return {"questions_and_responses": questions_and_responses}
-
+    return {
+        "message": f"Bot session completed for agent type '{agent_type}'.",
+        "questions_and_responses": questions_and_responses,
+    }
 
 if __name__ == "__main__":
     # Local testing
