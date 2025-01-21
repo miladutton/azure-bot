@@ -1,11 +1,11 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from main import run_professional_bot, run_moderate_bot, run_friendly_bot
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')  # Ensure 'templates' folder is correctly set
 
 @app.route("/")
 def home():
-    return "Welcome to the Bot Application!"
+    return render_template("index.html")  # Render the HTML page
 
 @app.route("/bot", methods=["POST"])
 def bot_interaction():
@@ -21,8 +21,7 @@ def bot_interaction():
     else:
         return jsonify({"error": "Invalid agent type. Choose 'professional', 'moderate', or 'friendly'."}), 400
 
-    return jsonify(response)  # Return the bot's session data as JSON
-
+    return jsonify(response)  # Return the bot's output as JSON
 
 if __name__ == "__main__":
     app.run(debug=True)
