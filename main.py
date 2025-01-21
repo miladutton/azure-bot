@@ -48,7 +48,7 @@ def run_bot(agent_type):
 
     elif agent_type == "moderate":
         bot = ModerateBot()
-        style, pitch, rate = "calm", "+10%", "1.0"  # Moderate tone
+        style, pitch, rate = "calm", "+5%", "1.0"  # Moderate tone
         pauses = {"commas": 0.15, "periods": 0.3}  # Balanced pauses
         volume = "medium-soft"
         articulation = "smooth"
@@ -58,7 +58,7 @@ def run_bot(agent_type):
 
     elif agent_type == "friendly":
         bot = CasualBot()
-        style, pitch, rate = "cheerful", "+20%", "1.2"  # Friendly tone
+        style, pitch, rate = "cheerful", "+10%", "1.2"  # Friendly tone
         pauses = {"commas": 0.1, "periods": 0.2}  # Shorter pauses
         volume = "medium-loud"
         articulation = "relaxed"
