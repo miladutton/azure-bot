@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Interactive Bot</title>
+</head>
+<body>
+    <h1>Welcome to the Bot Application</h1>
+    <form id="bot-form">
+        <label for="agent-type">Choose Bot Type:</label>
+        <select id="agent-type" name="agent_type">
+            <option value="professional">Professional</option>
+            <option value="moderate">Moderate</option>
+            <option value="friendly">Friendly</option>
+        </select>
+        <br><br>
+        <button type="submit">Start Interaction</button>
+    </form>
+    <div id="response"></div>
+
+    <script>
+        const form = document.getElementById('bot-form');
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const agentType = document.getElementById('agent-type').value;
+
+            const response = await fetch('/bot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ agent_type: agentType })
+            });
+            const result = await response.json();
+            document.getElementById('response').innerText = result.message || result.error;
+        };
+    </script>
+</body>
+</html>

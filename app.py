@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import os
 from main import run_professional_bot, run_moderate_bot, run_friendly_bot
 
@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "Welcome to the Bot Application! Use /bot to interact."
+    return render_template("index.html")  # Serve the HTML page
 
 @app.route("/bot", methods=["POST"])
 def bot_interaction():
