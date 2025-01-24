@@ -6,47 +6,15 @@ from bot_logic.casual_bot import CasualBot
 from speech.text_to_speech import speak_text
 from speech.speech_to_text import recognize_speech
 
-def run_professional_bot():
-    return run_bot("professional")
-
-def run_moderate_bot():
-    return run_bot("moderate")
-
-def run_friendly_bot():
-    return run_bot("friendly")
-
-def run_bot(agent_type):
+def run_agent(agent_type, bot, speech_config, style, pitch, rate):
     """
-    Runs the selected bot based on agent_type ('professional', 'moderate', 'friendly').
-    Continuously listens for user responses and returns session data.
+    Runs a single agent session and collects user responses.
+    Returns session data.
     """
-    # Initialize Azure Speech SDK
-    speech_key = os.getenv("AZURE_SPEECH_KEY")
-    region = os.getenv("AZURE_REGION")
-
-    if not speech_key or not region:
-        return {"error": "Azure Speech Key or Region is not set."}
-
-    speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=region)
-
-    # Select the appropriate bot and settings
-    if agent_type == "professional":
-        bot = ProfessionalBot()
-        style, pitch, rate = "newscast", "0%", "0.9"
-    elif agent_type == "moderate":
-        bot = ModerateBot()
-        style, pitch, rate = "calm", "+2%", "1.0"
-    elif agent_type == "friendly":
-        bot = CasualBot()
-        style, pitch, rate = "friendly", "+5%", "1.2"
-    else:
-        return {"error": "Invalid agent type. Choose 'professional', 'moderate', or 'friendly'."}
-
-    # Initialize session
     questions_and_responses = []
     speak_text(
         speech_config,
-        "Hello, welcome to this session. I will ask you some questions.",
+        f"Hello, welcome to the {agent_type} agent session. I will ask you some questions.",
         style=style, pitch=pitch, rate=rate,
     )
 
@@ -56,7 +24,7 @@ def run_bot(agent_type):
         if question is None:
             speak_text(
                 speech_config,
-                "Thank you for completing this session. Your responses are greatly appreciated.",
+                f"Thank you for completing the {agent_type} agent session. Your responses are greatly appreciated.",
                 style=style, pitch=pitch, rate=rate,
             )
             break
@@ -75,17 +43,47 @@ def run_bot(agent_type):
         questions_and_responses.append({"question": question, "response": user_response})
         print(f"User said: {user_response}")  # Output user response to terminal
 
+    # Return session data without follow-up responses
     return {
-        "message": f"Bot session completed for agent type '{agent_type}'.",
+        "agent_type": agent_type,
         "questions_and_responses": questions_and_responses,
     }
 
-if __name__ == "__main__":
-    # Local testing
-    agent_type = input("Choose agent type (professional, moderate, friendly): ").strip().lower()
+def run_all_agents():
+    """
+    Runs all agents (Professional, Moderate, Friendly) sequentially and collects session data.
+    """
+    # Initialize Azure Speech SDK
+    speech_key = os.getenv("AZURE_SPEECH_KEY")
+    region = os.getenv("AZURE_REGION")
 
-    if agent_type in ["professional", "moderate", "friendly"]:
-        result = run_bot(agent_type)
+    if not speech_key or not region:
+        return {"error": "Azure Speech Key or Region is not set."}
+
+    speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=region)
+
+    # Define agents and their settings
+    agents = [
+        {"type": "professional", "bot": ProfessionalBot(), "style": "newscast", "pitch": "0%", "rate": "0.9"},
+        {"type": "moderate", "bot": ModerateBot(), "style": "calm", "pitch": "+2%", "rate": "1.0"},
+        {"type": "friendly", "bot": CasualBot(), "style": "friendly", "pitch": "+5%", "rate": "1.2"},
+    ]
+
+    # Run each agent and collect responses
+    all_sessions = []
+    for agent in agents:
+        session_data = run_agent(
+            agent["type"], agent["bot"], speech_config, agent["style"], agent["pitch"], agent["rate"]
+        )
+        all_sessions.append(session_data)
+
+    return all_sessions
+
+if __name__ == "__main__":
+    # Run all agents sequentially
+    results = run_all_agents()
+
+    # Save or print the results for debugging
+    print("All sessions completed:")
+    for result in results:
         print(result)
-    else:
-        print("Invalid selection. Please choose from 'professional', 'moderate', or 'friendly'.")

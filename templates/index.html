@@ -4,28 +4,62 @@
     <title>Interactive Bot</title>
 </head>
 <body>
-    <h1>Welcome to the Bot Application</h1>
-    <form id="bot-form">
-        <label for="agent-type">Choose Bot Type:</label>
-        <select id="agent-type" name="agent_type">
-            <option value="professional">Professional</option>
-            <option value="moderate">Moderate</option>
-            <option value="friendly">Friendly</option>
-        </select>
-        <br><br>
-        <button type="submit">Start Interaction</button>
-    </form>
-    <div id="response">
-        <h2>Conversation:</h2>
+    <h1 id="title">Welcome to the Bot Application</h1>
+    
+    <!-- Interaction Section -->
+    <div id="interaction-section">
+        <button id="start-interaction">Start Interaction</button>
         <ul id="conversation-list"></ul>
     </div>
 
-    <script>
-        const form = document.getElementById('bot-form');
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            const agentType = document.getElementById('agent-type').value;
+    <!-- Follow-Up Section (Hidden Initially) -->
+    <div id="follow-up-section" style="display: none;">
+        <h2>Follow-Up Questions</h2>
+        <form id="follow-up-form">
+            <!-- Likert Questions -->
+            <div>
+                <h3>Engagement and Approachability</h3>
+                <p>How easy or difficult was it to engage in conversation with this agent?</p>
+                <label>
+                    <input type="radio" name="engagement" value="1"> 1 (Very Difficult)
+                </label>
+                <label>
+                    <input type="radio" name="engagement" value="2"> 2
+                </label>
+                <label>
+                    <input type="radio" name="engagement" value="3" checked> 3
+                </label>
+                <label>
+                    <input type="radio" name="engagement" value="4"> 4
+                </label>
+                <label>
+                    <input type="radio" name="engagement" value="5"> 5 (Very Easy)
+                </label>
+            </div>
 
+            <!-- Free-Response -->
+            <div>
+                <h3>Areas for Improvement</h3>
+                <textarea name="improvement" placeholder="What could be improved?"></textarea>
+            </div>
+        </form>
+        <p id="continue-instructions" style="display: none;">Press the space bar to continue.</p>
+        <button id="submit-follow-up" style="display: none;">Submit Responses</button>
+    </div>
+
+    <script>
+        const agents = ["professional", "moderate", "friendly"];
+        let currentAgentIndex = 0;
+        let allResponses = [];
+
+        const interactionSection = document.getElementById("interaction-section");
+        const followUpSection = document.getElementById("follow-up-section");
+        const followUpForm = document.getElementById("follow-up-form");
+        const submitFollowUpButton = document.getElementById("submit-follow-up");
+        const continueInstructions = document.getElementById("continue-instructions");
+
+        async function runAgent() {
+            const agentType = agents[currentAgentIndex];
             const response = await fetch('/bot', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -33,19 +67,74 @@
             });
             const result = await response.json();
 
-            const conversationList = document.getElementById('conversation-list');
-            conversationList.innerHTML = ""; // Clear previous conversations
+            // Display the conversation
+            const conversationList = document.getElementById("conversation-list");
+            conversationList.innerHTML = ""; // Clear previous results
+            result.questions_and_responses.forEach((entry) => {
+                const listItem = document.createElement('li');
+                listItem.textContent = `Q: ${entry.question} - A: ${entry.response}`;
+                conversationList.appendChild(listItem);
+            });
 
-            if (result.questions_and_responses) {
-                result.questions_and_responses.forEach((entry) => {
-                    const listItem = document.createElement('li');
-                    listItem.textContent = `Q: ${entry.question} - A: ${entry.response}`;
-                    conversationList.appendChild(listItem);
-                });
+            allResponses.push({ agent: agentType, sessionResponses: result.questions_and_responses });
+
+            // Show the follow-up questions
+            showFollowUpSection();
+        }
+
+        function showFollowUpSection() {
+            interactionSection.style.display = "none"; // Hide the interaction section
+            followUpSection.style.display = "block"; // Show the follow-up section
+            continueInstructions.style.display = "block";
+
+            // Wait for the space bar press to move forward
+            document.addEventListener("keydown", handleSpaceBar);
+        }
+
+        function handleSpaceBar(event) {
+            if (event.code === "Space") {
+                document.removeEventListener("keydown", handleSpaceBar); // Remove the event listener
+                continueInstructions.style.display = "none"; // Hide instructions
+                submitFollowUpButton.style.display = "block"; // Show the submit button
+            }
+        }
+
+        submitFollowUpButton.onclick = async () => {
+            // Collect follow-up responses
+            const formData = new FormData(followUpForm);
+            const followUpResponses = {};
+            formData.forEach((value, key) => {
+                followUpResponses[key] = value;
+            });
+
+            allResponses[currentAgentIndex].followUpResponses = followUpResponses;
+
+            // Move to the next agent or finish
+            currentAgentIndex++;
+            if (currentAgentIndex < agents.length) {
+                resetForNextAgent();
+                await runAgent();
             } else {
-                conversationList.innerHTML = `<li>${result.error || "Error occurred"}</li>`;
+                finishInteraction();
             }
         };
+
+        function resetForNextAgent() {
+            // Reset the follow-up form and UI for the next agent
+            followUpForm.reset();
+            followUpSection.style.display = "none";
+            interactionSection.style.display = "block";
+            submitFollowUpButton.style.display = "none";
+        }
+
+        function finishInteraction() {
+            // Finalize the process
+            followUpSection.style.display = "none";
+            document.getElementById("title").textContent = "Thank you for your responses!";
+            console.log("Final Responses:", allResponses); // Debugging output
+        }
+
+        document.getElementById("start-interaction").onclick = runAgent;
     </script>
 </body>
 </html>

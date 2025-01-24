@@ -1,5 +1,5 @@
-from flask import Flask, request, jsonify, render_template
-from main import run_professional_bot, run_moderate_bot, run_friendly_bot
+from flask import Flask, jsonify, render_template
+from main import run_all_agents  # Import the new function for running all agents sequentially
 
 app = Flask(__name__, template_folder='templates')  # Ensure 'templates' folder is correctly set
 
@@ -9,19 +9,15 @@ def home():
 
 @app.route("/bot", methods=["POST"])
 def bot_interaction():
-    agent_type = request.json.get("agent_type", "professional")  # Get the agent type
-
-    # Call the appropriate bot function
-    if agent_type == "professional":
-        response = run_professional_bot()
-    elif agent_type == "moderate":
-        response = run_moderate_bot()
-    elif agent_type == "friendly":
-        response = run_friendly_bot()
-    else:
-        return jsonify({"error": "Invalid agent type. Choose 'professional', 'moderate', or 'friendly'."}), 400
-
-    return jsonify(response)  # Return the bot's output as JSON
+    """
+    Handles the interaction with all agents sequentially and returns the results.
+    """
+    try:
+        # Run all agents sequentially
+        response = run_all_agents()
+        return jsonify(response)  # Return the combined results as JSON
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500  # Return error message if something goes wrong
 
 if __name__ == "__main__":
     app.run(debug=True)
