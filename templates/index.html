@@ -1,155 +1,177 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Interactive Bot Application</title>
+    <title>Bot Interaction Experiment</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .hidden { display: none; }
+        .question-group { margin-bottom: 20px; }
+        .likert-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    </style>
 </head>
 <body>
-    <!-- Initial Page Section -->
-    <div id="initial-page">
-        <h1>Welcome to the Interactive Bot Application</h1>
-        <p>In this experiment, you will interact with three different bots and provide feedback on your experience.</p>
-        <button id="start-button">Start</button>
+    <!-- Welcome Page -->
+    <div id="welcome-page">
+        <h1>Bot Interaction Experiment</h1>
+        <button id="start-experiment">Begin Experiment</button>
     </div>
 
-    <!-- Interaction Section -->
-    <div id="interaction-section" style="display: none;">
-        <h2>Agent Interaction</h2>
-        <ul id="conversation-list"></ul>
+    <!-- Interaction Page -->
+    <div id="interaction-page" class="hidden">
+        <h2 id="agent-title"></h2>
+        <div id="conversation-display"></div>
+        <button id="proceed-to-ratings" class="hidden">Continue</button>
     </div>
 
-    <!-- Follow-Up Section -->
-    <div id="follow-up-section" style="display: none;">
-        <h2 id="follow-up-header">Follow-Up Questions</h2>
-        <form id="follow-up-form">
-            <div>
-                <h3>Engagement and Approachability</h3>
-                <p>How easy or difficult was it to engage in conversation with this agent?</p>
-                <label>
-                    <input type="radio" name="engagement" value="1"> 1 (Very Difficult)
-                </label>
-                <label>
-                    <input type="radio" name="engagement" value="2"> 2
-                </label>
-                <label>
-                    <input type="radio" name="engagement" value="3" checked> 3
-                </label>
-                <label>
-                    <input type="radio" name="engagement" value="4"> 4
-                </label>
-                <label>
-                    <input type="radio" name="engagement" value="5"> 5 (Very Easy)
-                </label>
-            </div>
-            <p id="continue-instructions" style="display: none;">Press the space bar to continue.</p>
-            <button id="submit-follow-up" style="display: none;">Submit Responses</button>
+    <!-- Ratings Page -->
+    <div id="ratings-page" class="hidden">
+        <h2 id="ratings-agent-title">Follow-Up Questionnaire</h2>
+        <form id="ratings-form">
+            <div id="ratings-container"></div>
+            <button type="submit">Submit Ratings</button>
         </form>
     </div>
 
+    <!-- Completion Page -->
+    <div id="completion-page" class="hidden">
+        <h1>Experiment Complete</h1>
+        <p>Thank you for participating!</p>
+    </div>
+
     <script>
-        // Define all the necessary constants and variables
-        const agents = ["professional", "moderate", "friendly"];
+        const agents = ['professional', 'moderate', 'friendly'];
+        const followUpQuestions = {
+            "Engagement and Approachability": [
+                "How easy or difficult was it to engage in conversation with this agent? (1 = Very Difficult, 5 = Very Easy)",
+                "Did this agent feel friendly and approachable to you? (1 = Strongly Disagree, 5 = Strongly Agree)",
+                "How would you rate this agent's engagement level and friendliness? (1 = Very Low, 5 = Very High)"
+            ],
+            "Communication Style": [
+                "How natural did the conversation feel with this agent overall? (1 = Not Natural, 5 = Very Natural)",
+                "Did the agent's tone or language make you feel comfortable sharing your thoughts? (1 = Strongly Disagree, 5 = Strongly Agree)",
+                "Did the timing and pauses in the conversation feel natural, or were they distracting? (1 = Very Distracting, 5 = Very Natural)"
+            ]
+        };
+
         let currentAgentIndex = 0;
-        let allResponses = [];
+        let experimentResults = [];
 
-        const initialPage = document.getElementById("initial-page");
-        const interactionSection = document.getElementById("interaction-section");
-        const followUpSection = document.getElementById("follow-up-section");
-        const followUpForm = document.getElementById("follow-up-form");
-        const submitFollowUpButton = document.getElementById("submit-follow-up");
-        const continueInstructions = document.getElementById("continue-instructions");
+        document.getElementById('start-experiment').addEventListener('click', startExperiment);
 
-        // Transition from the initial page to the interaction phase
-        document.getElementById("start-button").onclick = () => {
-            initialPage.style.display = "none"; // Hide the initial page
-            interactionSection.style.display = "block"; // Show the interaction section
-            runAgent(); // Start the first agent interaction
-        };
+        async function startExperiment() {
+            document.getElementById('welcome-page').classList.add('hidden');
+            document.getElementById('interaction-page').classList.remove('hidden');
+            await fetchAgentInteraction();
+        }
 
-        // Function to interact with a single agent
-        async function runAgent() {
+        async function fetchAgentInteraction() {
             const agentType = agents[currentAgentIndex];
+            document.getElementById('agent-title').textContent = `${agentType.charAt(0).toUpperCase() + agentType.slice(1)} Agent Interaction`;
 
-            // Fetch interaction data from the backend
-            const response = await fetch('/bot', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ agent_type: agentType })
-            });
-            const result = await response.json();
-
-            // Display the conversation
-            const conversationList = document.getElementById("conversation-list");
-            conversationList.innerHTML = ""; // Clear previous results
-            result.questions_and_responses.forEach((entry) => {
-                const listItem = document.createElement('li');
-                listItem.textContent = `Q: ${entry.question} - A: ${entry.response}`;
-                conversationList.appendChild(listItem);
-            });
-
-            // Store the responses for this agent
-            allResponses.push({ agent: agentType, sessionResponses: result.questions_and_responses });
-
-            // Transition to follow-up section
-            showFollowUpSection(agentType);
-        }
-
-        // Show the follow-up questions for the current agent
-        function showFollowUpSection(agentType) {
-            interactionSection.style.display = "none"; // Hide the interaction section
-            followUpSection.style.display = "block"; // Show the follow-up section
-            continueInstructions.style.display = "block"; // Show "Press space bar" instructions
-
-            const followUpHeader = document.getElementById("follow-up-header");
-            followUpHeader.textContent = `Follow-Up Questions for the ${agentType} Agent`;
-
-            // Wait for the user to press the space bar
-            document.addEventListener("keydown", handleSpaceBar);
-        }
-
-        // Handle space bar press to proceed with the follow-up
-        function handleSpaceBar(event) {
-            if (event.code === "Space") {
-                document.removeEventListener("keydown", handleSpaceBar); // Remove the event listener
-                continueInstructions.style.display = "none"; // Hide the instructions
-                submitFollowUpButton.style.display = "block"; // Show the submit button
+            try {
+                const response = await fetch('/bot', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ agent_type: agentType })
+                });
+                const data = await response.json();
+                displayConversation(data.questions_and_responses);
+            } catch (error) {
+                console.error('Failed to fetch interaction:', error);
             }
         }
 
-        // Handle submission of follow-up responses
-        submitFollowUpButton.onclick = async () => {
-            const formData = new FormData(followUpForm);
-            const followUpResponses = {};
-            formData.forEach((value, key) => {
-                followUpResponses[key] = value;
+        function displayConversation(interactions) {
+            const conversationDisplay = document.getElementById('conversation-display');
+            conversationDisplay.innerHTML = interactions.map(
+                interaction => `<p>Q: ${interaction.question}<br>A: ${interaction.response}</p>`
+            ).join('');
+
+            // Show the "Continue" button after displaying the conversation
+            const continueButton = document.getElementById('proceed-to-ratings');
+            continueButton.classList.remove('hidden');
+            continueButton.onclick = showRatingsPage;
+        }
+
+        function showRatingsPage() {
+            document.getElementById('interaction-page').classList.add('hidden');
+            document.getElementById('ratings-page').classList.remove('hidden');
+
+            const ratingsContainer = document.getElementById('ratings-container');
+            const agentType = agents[currentAgentIndex];
+            document.getElementById('ratings-agent-title').textContent = `${agentType.charAt(0).toUpperCase() + agentType.slice(1)} Agent Follow-Up Questionnaire`;
+
+            ratingsContainer.innerHTML = '';
+
+            Object.entries(followUpQuestions).forEach(([section, questions]) => {
+                const sectionDiv = document.createElement('div');
+                sectionDiv.classList.add('question-group');
+
+                const sectionTitle = document.createElement('h3');
+                sectionTitle.textContent = section;
+                sectionDiv.appendChild(sectionTitle);
+
+                questions.forEach((question, index) => {
+                    const questionDiv = document.createElement('div');
+                    questionDiv.classList.add('likert-row');
+
+                    const questionText = document.createElement('p');
+                    questionText.textContent = question;
+                    questionDiv.appendChild(questionText);
+
+                    const radioGroup = document.createElement('div');
+                    for (let i = 1; i <= 5; i++) {
+                        const radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.name = `${section.replace(/\s+/g, '_')}_${index}`;
+                        radio.value = i;
+                        radio.required = true;
+
+                        const label = document.createElement('label');
+                        label.appendChild(radio);
+                        label.appendChild(document.createTextNode(i));
+
+                        radioGroup.appendChild(label);
+                    }
+
+                    questionDiv.appendChild(radioGroup);
+                    sectionDiv.appendChild(questionDiv);
+                });
+
+                ratingsContainer.appendChild(sectionDiv);
             });
 
-            // Store follow-up responses for the current agent
-            allResponses[currentAgentIndex].followUpResponses = followUpResponses;
+            // Add event listener for form submission
+            const ratingsForm = document.getElementById('ratings-form');
+            ratingsForm.onsubmit = handleRatingSubmission;
+        }
 
-            // Move to the next agent or finish the interaction
+        function handleRatingSubmission(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const ratings = Object.fromEntries(formData.entries());
+
+            experimentResults.push({
+                agent: agents[currentAgentIndex],
+                ratings: ratings
+            });
+
+            event.target.reset();
             currentAgentIndex++;
-            if (currentAgentIndex < agents.length) {
-                resetForNextAgent();
-                runAgent();
-            } else {
-                finishInteraction();
-            }
-        };
 
-        // Reset the UI for the next agent
-        function resetForNextAgent() {
-            followUpForm.reset(); // Clear the form
-            followUpSection.style.display = "none"; // Hide follow-up section
-            interactionSection.style.display = "block"; // Show interaction section
-            submitFollowUpButton.style.display = "none"; // Hide the submit button
+            if (currentAgentIndex < agents.length) {
+                document.getElementById('ratings-page').classList.add('hidden');
+                document.getElementById('interaction-page').classList.remove('hidden');
+                fetchAgentInteraction();
+            } else {
+                showCompletionPage();
+            }
         }
 
-        // Finalize the interaction
-        function finishInteraction() {
-            followUpSection.style.display = "none"; // Hide the follow-up section
-            const title = document.getElementById("title");
-            title.textContent = "Thank you for participating!";
-            console.log("Final Responses:", allResponses); // Debugging: Log all responses
+        function showCompletionPage() {
+            document.getElementById('ratings-page').classList.add('hidden');
+            document.getElementById('completion-page').classList.remove('hidden');
+            console.log('Experiment Results:', experimentResults);
         }
     </script>
 </body>
