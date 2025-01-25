@@ -1,140 +1,99 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Interactive Bot</title>
-</head>
-<body>
-    <h1 id="title">Welcome to the Bot Application</h1>
-    
-    <!-- Interaction Section -->
-    <div id="interaction-section">
-        <button id="start-interaction">Start Interaction</button>
-        <ul id="conversation-list"></ul>
-    </div>
+<script>
+    const agents = ["professional", "moderate", "friendly"];
+    let currentAgentIndex = 0;
+    let allResponses = [];
 
-    <!-- Follow-Up Section (Hidden Initially) -->
-    <div id="follow-up-section" style="display: none;">
-        <h2>Follow-Up Questions</h2>
-        <form id="follow-up-form">
-            <!-- Likert Questions -->
-            <div>
-                <h3>Engagement and Approachability</h3>
-                <p>How easy or difficult was it to engage in conversation with this agent?</p>
-                <label>
-                    <input type="radio" name="engagement" value="1"> 1 (Very Difficult)
-                </label>
-                <label>
-                    <input type="radio" name="engagement" value="2"> 2
-                </label>
-                <label>
-                    <input type="radio" name="engagement" value="3" checked> 3
-                </label>
-                <label>
-                    <input type="radio" name="engagement" value="4"> 4
-                </label>
-                <label>
-                    <input type="radio" name="engagement" value="5"> 5 (Very Easy)
-                </label>
-            </div>
+    const interactionSection = document.getElementById("interaction-section");
+    const followUpSection = document.getElementById("follow-up-section");
+    const followUpForm = document.getElementById("follow-up-form");
+    const submitFollowUpButton = document.getElementById("submit-follow-up");
+    const continueInstructions = document.getElementById("continue-instructions");
 
-            <!-- Free-Response -->
-            <div>
-                <h3>Areas for Improvement</h3>
-                <textarea name="improvement" placeholder="What could be improved?"></textarea>
-            </div>
-        </form>
-        <p id="continue-instructions" style="display: none;">Press the space bar to continue.</p>
-        <button id="submit-follow-up" style="display: none;">Submit Responses</button>
-    </div>
+    // Function to start interacting with an agent
+    async function runAgent() {
+        const agentType = agents[currentAgentIndex];
+        const response = await fetch('/bot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ agent_type: agentType })
+        });
+        const result = await response.json();
 
-    <script>
-        const agents = ["professional", "moderate", "friendly"];
-        let currentAgentIndex = 0;
-        let allResponses = [];
+        // Display the conversation
+        const conversationList = document.getElementById("conversation-list");
+        conversationList.innerHTML = ""; // Clear previous results
+        result.questions_and_responses.forEach((entry) => {
+            const listItem = document.createElement('li');
+            listItem.textContent = `Q: ${entry.question} - A: ${entry.response}`;
+            conversationList.appendChild(listItem);
+        });
 
-        const interactionSection = document.getElementById("interaction-section");
-        const followUpSection = document.getElementById("follow-up-section");
-        const followUpForm = document.getElementById("follow-up-form");
-        const submitFollowUpButton = document.getElementById("submit-follow-up");
-        const continueInstructions = document.getElementById("continue-instructions");
+        // Store the responses for this agent
+        allResponses.push({ agent: agentType, sessionResponses: result.questions_and_responses });
 
-        async function runAgent() {
-            const agentType = agents[currentAgentIndex];
-            const response = await fetch('/bot', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ agent_type: agentType })
-            });
-            const result = await response.json();
+        // Transition to follow-up section
+        showFollowUpSection(agentType);
+    }
 
-            // Display the conversation
-            const conversationList = document.getElementById("conversation-list");
-            conversationList.innerHTML = ""; // Clear previous results
-            result.questions_and_responses.forEach((entry) => {
-                const listItem = document.createElement('li');
-                listItem.textContent = `Q: ${entry.question} - A: ${entry.response}`;
-                conversationList.appendChild(listItem);
-            });
+    // Show follow-up questions after agent interaction
+    function showFollowUpSection(agentType) {
+        interactionSection.style.display = "none"; // Hide the interaction section
+        followUpSection.style.display = "block"; // Show the follow-up section
+        continueInstructions.style.display = "block"; // Show "Press space bar" instructions
 
-            allResponses.push({ agent: agentType, sessionResponses: result.questions_and_responses });
+        const followUpHeader = document.getElementById("follow-up-header");
+        followUpHeader.textContent = `Follow-Up Questions for the ${agentType} Agent`;
 
-            // Show the follow-up questions
-            showFollowUpSection();
+        // Wait for the user to press the space bar
+        document.addEventListener("keydown", handleSpaceBar);
+    }
+
+    // Handle space bar press
+    function handleSpaceBar(event) {
+        if (event.code === "Space") {
+            document.removeEventListener("keydown", handleSpaceBar); // Remove the event listener
+            continueInstructions.style.display = "none"; // Hide the instructions
+            submitFollowUpButton.style.display = "block"; // Show the submit button
         }
+    }
 
-        function showFollowUpSection() {
-            interactionSection.style.display = "none"; // Hide the interaction section
-            followUpSection.style.display = "block"; // Show the follow-up section
-            continueInstructions.style.display = "block";
+    // Handle follow-up form submission
+    submitFollowUpButton.onclick = async () => {
+        const formData = new FormData(followUpForm);
+        const followUpResponses = {};
+        formData.forEach((value, key) => {
+            followUpResponses[key] = value;
+        });
 
-            // Wait for the space bar press to move forward
-            document.addEventListener("keydown", handleSpaceBar);
+        // Store the follow-up responses for the current agent
+        allResponses[currentAgentIndex].followUpResponses = followUpResponses;
+
+        // Move to the next agent or finish
+        currentAgentIndex++;
+        if (currentAgentIndex < agents.length) {
+            resetForNextAgent();
+            await runAgent();
+        } else {
+            finishInteraction();
         }
+    };
 
-        function handleSpaceBar(event) {
-            if (event.code === "Space") {
-                document.removeEventListener("keydown", handleSpaceBar); // Remove the event listener
-                continueInstructions.style.display = "none"; // Hide instructions
-                submitFollowUpButton.style.display = "block"; // Show the submit button
-            }
-        }
+    // Reset the UI for the next agent
+    function resetForNextAgent() {
+        followUpForm.reset(); // Clear the form
+        followUpSection.style.display = "none"; // Hide follow-up section
+        interactionSection.style.display = "block"; // Show interaction section
+        submitFollowUpButton.style.display = "none"; // Hide the submit button
+    }
 
-        submitFollowUpButton.onclick = async () => {
-            // Collect follow-up responses
-            const formData = new FormData(followUpForm);
-            const followUpResponses = {};
-            formData.forEach((value, key) => {
-                followUpResponses[key] = value;
-            });
+    // Finalize the interaction
+    function finishInteraction() {
+        followUpSection.style.display = "none"; // Hide the follow-up section
+        const title = document.getElementById("title");
+        title.textContent = "Thank you for your responses!";
+        console.log("Final Responses:", allResponses); // Debugging: Log all responses
+    }
 
-            allResponses[currentAgentIndex].followUpResponses = followUpResponses;
-
-            // Move to the next agent or finish
-            currentAgentIndex++;
-            if (currentAgentIndex < agents.length) {
-                resetForNextAgent();
-                await runAgent();
-            } else {
-                finishInteraction();
-            }
-        };
-
-        function resetForNextAgent() {
-            // Reset the follow-up form and UI for the next agent
-            followUpForm.reset();
-            followUpSection.style.display = "none";
-            interactionSection.style.display = "block";
-            submitFollowUpButton.style.display = "none";
-        }
-
-        function finishInteraction() {
-            // Finalize the process
-            followUpSection.style.display = "none";
-            document.getElementById("title").textContent = "Thank you for your responses!";
-            console.log("Final Responses:", allResponses); // Debugging output
-        }
-
-        document.getElementById("start-interaction").onclick = runAgent;
-    </script>
-</body>
-</html>
+    // Start the interaction process
+    document.getElementById("start-interaction").onclick = runAgent;
+</script>
