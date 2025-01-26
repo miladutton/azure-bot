@@ -1,61 +1,59 @@
-adal==1.2.7
-aiodns==3.2.0
-aiohappyeyeballs==2.4.4
-aiohttp==3.10.5
-aiounittest==1.4.2
-appdirs==1.4.4
-atomicwrites==1.4.0
-av==14.0.1
-azure-cognitiveservices-language-luis==0.2.0
-azure-cognitiveservices-speech==1.42.0
-azure-common==1.1.28
-azure-core==1.32.0
-blinker==1.9.0
-botbuilder-ai==4.16.2
-botbuilder-core==4.16.2
-botbuilder-schema==4.16.2
-botframework-connector==4.16.2
-botframework-streaming==4.16.2
-cachelib==0.13.0
-Flask==3.1.0
-Flask-Session==0.8.0
-google-api-core>=2.19.2,<3.0.0
+cachetools==5.5.1
+    # via google-auth
+certifi==2024.12.14
+    # via requests
+charset-normalizer==3.4.1
+    # via requests
+google-api-core[grpc]==2.24.0
+    # via
+    #   -r requirements.in
+    #   google-cloud-dialogflow-cx
 google-auth==2.35.0
-google-cloud-dialogflow-cx>=1.35.0,<2.0.0
-googleapis-common-protos>=1.65.0,<2.0.0
-grpcio>=1.56.0
-grpcio-status>=1.56.0
-gunicorn==23.0.0
-isodate==0.7.2
-jiter==0.8.2
-jsonpickle==1.4.2
-jsonpointer==2.1
+    # via
+    #   google-api-core
+    #   google-cloud-dialogflow-cx
+google-cloud-dialogflow-cx==1.38.0
+    # via -r requirements.in
+googleapis-common-protos==1.66.0
+    # via
+    #   google-api-core
+    #   grpcio-status
+grpcio==1.70.0
+    # via
+    #   google-api-core
+    #   grpcio-status
+grpcio-status==1.70.0
+    # via
+    #   -r requirements.in
+    #   google-api-core
+idna==3.10
+    # via requests
 livekit==0.18.2
-livekit-agents==0.12.2
-livekit-api==0.8.0
-livekit-plugins-openai==0.10.10
-livekit-protocol==0.7.0
-MarkupSafe==3.0.2
-msal==1.31.1
-msgspec==0.19.0
-msrest==0.7.1
-msrestazure==0.6.4.post1
-oauthlib==3.2.2
-openai==1.57.3
-packaging==23.1
-proto-plus>=1.24.0,<2.0.0
-protobuf>=3.20.2,<4.21.0
+    # via -r requirements.in
+proto-plus==1.25.0
+    # via
+    #   google-api-core
+    #   google-cloud-dialogflow-cx
+protobuf==5.29.3
+    # via
+    #   -r requirements.in
+    #   google-api-core
+    #   google-cloud-dialogflow-cx
+    #   googleapis-common-protos
+    #   grpcio-status
+    #   livekit
+    #   proto-plus
+pyasn1==0.4.8
+    # via
+    #   pyasn1-modules
+    #   rsa
 pyasn1-modules==0.2.8
-pycares==4.5.0
-pyls-spyder==0.4.0
-PyQt5==5.15.10
-PyQtWebEngine==5.15.6
-python-dotenv==1.0.1
-requests-oauthlib==2.0.0
+    # via google-auth
+requests==2.32.3
+    # via google-api-core
 rsa==4.9
-setuptools==75.1.0
+    # via google-auth
 types-protobuf==4.25.0.20240417
-typing_extensions==4.12.2
-watchfiles==0.24.0
-Werkzeug==3.1.3
-wheel==0.44.0
+    # via livekit
+urllib3==2.3.0
+    # via requests
