@@ -1,3 +1,5 @@
+# /mnt/data/main.py
+import time
 import os
 import azure.cognitiveservices.speech as speechsdk
 from bot_logic.professional_bot import ProfessionalBot
@@ -11,7 +13,11 @@ speech_key = os.getenv("AZURE_SPEECH_KEY")
 region = os.getenv("AZURE_REGION")
 speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=region)
 
-def run_agent(agent_type, bot, speech_config, style, pitch, rate):
+
+def run_agent(agent_type, bot, speech_config, style, pitch, rate, delay=8):
+    """
+    Runs the agent session and handles the conversation with a configurable delay.
+    """
     questions_and_responses = []
 
     # Start the session with a greeting
@@ -44,12 +50,15 @@ def run_agent(agent_type, bot, speech_config, style, pitch, rate):
             rate=rate
         )
 
-        # Recognize user's response
+        # Add a delay before capturing user input
+        time.sleep(delay)
+
+        # Recognize user’s response
         user_response = recognize_speech()
         if not user_response:
             speak_text(
                 speech_config,
-                "Sorry, I didn't catch that. Could you repeat?",
+                "Sorry, I didn’t catch that. Could you repeat?",
                 style=style,
                 pitch=pitch,
                 rate=rate
@@ -60,7 +69,11 @@ def run_agent(agent_type, bot, speech_config, style, pitch, rate):
 
     return {"agent_type": agent_type, "questions_and_responses": questions_and_responses}
 
-# Mock speech recognition function
+
+# Mock speech recognition function for development
 def recognize_speech():
+    """
+    Simulates user speech recognition for development purposes.
+    """
     # Simulate a user response
     return "This is a simulated response."
