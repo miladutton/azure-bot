@@ -84,4 +84,4 @@ def handle_follow_up_questions():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()  # Remove `debug=True`
