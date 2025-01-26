@@ -1,24 +1,24 @@
 import azure.cognitiveservices.speech as speechsdk
 
-# Replace with your Azure Speech key and region
-speech_key = "2ojPWe0ZTWbLxeV2mT5IxdwOyBtbcqEtlRZ7KQAkEY0aw3KeogqqJQQJ99ALACYeBjFXJ3w3AAAYACOG2s8I"
-region = "eastus"
+def test_speech_synthesis():
+    # Replace with your Azure Speech subscription key and region
+    subscription_key = "YOUR_AZURE_SPEECH_KEY"
+    region = "YOUR_AZURE_REGION"
 
-try:
-    # Configure Azure Speech SDK
-    speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=region)
-    synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config)
+    # Configure Azure Speech
+    speech_config = speechsdk.SpeechConfig(subscription=subscription_key, region=region)
+
+    # Log for debugging
+    speech_config.set_property(speechsdk.PropertyId.Speech_LogLevel, "All")
 
     # Synthesize speech
-    print("Testing Azure Speech SDK...")
-    result = synthesizer.speak_text_async("Hello! This is a test of the Azure Speech Service.").get()
+    synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config)
+    result = synthesizer.speak_text_async("Testing Azure Speech in Heroku").get()
 
-    # Handle results
     if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-        print("Speech synthesis succeeded.")
-    elif result.reason == speechsdk.ResultReason.Canceled:
-        cancellation = result.cancellation_details
-        print("Speech synthesis canceled. Reason:", cancellation.reason)
-        print("Error details:", cancellation.error_details)
-except Exception as e:
-    print("An error occurred:", str(e))
+        print("Speech synthesis succeeded!")
+    else:
+        print(f"Speech synthesis failed. Reason: {result.reason}")
+
+if __name__ == "__main__":
+    test_speech_synthesis()
