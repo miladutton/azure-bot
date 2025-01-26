@@ -1,6 +1,6 @@
 questions = {
     "professional": [
-        "Could you describe what a typical breakfast entails for you, if applicable?",
+        #"Could you describe what a typical breakfast entails for you, if applicable?",
         #"Do you have particular foods that you prefer to cook or prepare personally?",
         #"Are you currently pursuing any specific health-related objectives?",
         #"How would you characterize your preferred method of unwinding or relaxation?",

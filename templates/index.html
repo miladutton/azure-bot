@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Interaction Experiment</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/index.js" defer></script>
+</head>
+<body>
+    <!-- Welcome Page -->
+    <div id="welcome-page" class="centered">
+        <h1>Welcome to the Bot Interaction Experiment!</h1>
+        <button id="start-experiment" class="blue-button">Begin Experiment</button>
+    </div>
+
+    <!-- Interaction Page -->
+    <div id="interaction-page" class="hidden centered">
+        <h2 id="agent-title"></h2>
+        <p class="instructions">You will be able to press "Continue" after the agent has asked all the questions.</p>
+        <div id="conversation-display"></div>
+        <button id="proceed-to-ratings" class="blue-button" disabled>Continue</button>
+    </div>
+
+    <!-- Ratings Page -->
+    <div id="ratings-page" class="hidden centered">
+        <h2 id="ratings-agent-title">Follow-Up Questionnaire</h2>
+        <form id="ratings-form">
+            <!-- Questions dynamically inserted here -->
+            <div id="ratings-container"></div>
+            <button type="submit" class="blue-button">Submit Ratings</button>
+        </form>
+    </div>
+
+    <!-- Completion Page -->
+    <div id="completion-page" class="hidden centered">
+        <h1>Experiment Complete</h1>
+        <p>Thank you for participating!</p>
+    </div>
+</body>
+</html>
