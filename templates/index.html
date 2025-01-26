@@ -1,178 +1,98 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bot Interaction Experiment</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .hidden { display: none; }
-        .question-group { margin-bottom: 20px; }
-        .likert-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
-    </style>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/index.js" defer></script>
 </head>
 <body>
     <!-- Welcome Page -->
-    <div id="welcome-page">
-        <h1>Bot Interaction Experiment</h1>
-        <button id="start-experiment">Begin Experiment</button>
+    <div id="welcome-page" class="centered">
+        <h1>Welcome to the Bot Interaction Experiment!</h1>
+        <button id="start-experiment" class="blue-button">Begin Experiment</button>
     </div>
 
     <!-- Interaction Page -->
-    <div id="interaction-page" class="hidden">
+    <div id="interaction-page" class="hidden centered">
         <h2 id="agent-title"></h2>
+        <p class="instructions">You will be able to press "Continue" after the agent has asked all the questions.</p>
         <div id="conversation-display"></div>
-        <button id="proceed-to-ratings" class="hidden">Continue</button>
+        <button id="proceed-to-ratings" class="blue-button" disabled>Continue</button>
     </div>
 
     <!-- Ratings Page -->
-    <div id="ratings-page" class="hidden">
+    <div id="ratings-page" class="hidden centered">
         <h2 id="ratings-agent-title">Follow-Up Questionnaire</h2>
         <form id="ratings-form">
-            <div id="ratings-container"></div>
-            <button type="submit">Submit Ratings</button>
+            <!-- Likert Scales for Follow-Up Questions -->
+            <div id="ratings-container">
+
+                <!-- Engagement and Approachability -->
+                <div class="likert-container">
+                    <h3>Engagement and Approachability</h3>
+                    <div class="likert-prompt">
+                        <p>How easy or difficult was it to engage in conversation with this agent?</p>
+                    </div>
+                    <div class="likert-scale">
+                        <span class="scale-label">Very Difficult</span>
+                        <input type="radio" name="question1" value="1">
+                        <input type="radio" name="question1" value="2">
+                        <input type="radio" name="question1" value="3">
+                        <input type="radio" name="question1" value="4">
+                        <input type="radio" name="question1" value="5">
+                        <input type="radio" name="question1" value="6">
+                        <input type="radio" name="question1" value="7">
+                        <span class="scale-label">Very Easy</span>
+                    </div>
+                </div>
+
+                <div class="likert-container">
+                    <div class="likert-prompt">
+                        <p>Did this agent feel friendly and approachable to you?</p>
+                    </div>
+                    <div class="likert-scale">
+                        <span class="scale-label">Strongly Disagree</span>
+                        <input type="radio" name="question2" value="1">
+                        <input type="radio" name="question2" value="2">
+                        <input type="radio" name="question2" value="3">
+                        <input type="radio" name="question2" value="4">
+                        <input type="radio" name="question2" value="5">
+                        <input type="radio" name="question2" value="6">
+                        <input type="radio" name="question2" value="7">
+                        <span class="scale-label">Strongly Agree</span>
+                    </div>
+                </div>
+
+                <!-- Communication Style -->
+                <div class="likert-container">
+                    <h3>Communication Style</h3>
+                    <div class="likert-prompt">
+                        <p>How natural did the conversation feel with this agent overall?</p>
+                    </div>
+                    <div class="likert-scale">
+                        <span class="scale-label">Not Natural</span>
+                        <input type="radio" name="question3" value="1">
+                        <input type="radio" name="question3" value="2">
+                        <input type="radio" name="question3" value="3">
+                        <input type="radio" name="question3" value="4">
+                        <input type="radio" name="question3" value="5">
+                        <input type="radio" name="question3" value="6">
+                        <input type="radio" name="question3" value="7">
+                        <span class="scale-label">Very Natural</span>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="blue-button">Submit Ratings</button>
         </form>
     </div>
 
     <!-- Completion Page -->
-    <div id="completion-page" class="hidden">
+    <div id="completion-page" class="hidden centered">
         <h1>Experiment Complete</h1>
         <p>Thank you for participating!</p>
     </div>
-
-    <script>
-        const agents = ['professional', 'moderate', 'friendly'];
-        const followUpQuestions = {
-            "Engagement and Approachability": [
-                "How easy or difficult was it to engage in conversation with this agent? (1 = Very Difficult, 5 = Very Easy)",
-                "Did this agent feel friendly and approachable to you? (1 = Strongly Disagree, 5 = Strongly Agree)",
-                "How would you rate this agent's engagement level and friendliness? (1 = Very Low, 5 = Very High)"
-            ],
-            "Communication Style": [
-                "How natural did the conversation feel with this agent overall? (1 = Not Natural, 5 = Very Natural)",
-                "Did the agent's tone or language make you feel comfortable sharing your thoughts? (1 = Strongly Disagree, 5 = Strongly Agree)",
-                "Did the timing and pauses in the conversation feel natural, or were they distracting? (1 = Very Distracting, 5 = Very Natural)"
-            ]
-        };
-
-        let currentAgentIndex = 0;
-        let experimentResults = [];
-
-        document.getElementById('start-experiment').addEventListener('click', startExperiment);
-
-        async function startExperiment() {
-            document.getElementById('welcome-page').classList.add('hidden');
-            document.getElementById('interaction-page').classList.remove('hidden');
-            await fetchAgentInteraction();
-        }
-
-        async function fetchAgentInteraction() {
-            const agentType = agents[currentAgentIndex];
-            document.getElementById('agent-title').textContent = `${agentType.charAt(0).toUpperCase() + agentType.slice(1)} Agent Interaction`;
-
-            try {
-                const response = await fetch('/bot', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ agent_type: agentType })
-                });
-                const data = await response.json();
-                displayConversation(data.questions_and_responses);
-            } catch (error) {
-                console.error('Failed to fetch interaction:', error);
-            }
-        }
-
-        function displayConversation(interactions) {
-            const conversationDisplay = document.getElementById('conversation-display');
-            conversationDisplay.innerHTML = interactions.map(
-                interaction => `<p>Q: ${interaction.question}<br>A: ${interaction.response}</p>`
-            ).join('');
-
-            // Show the "Continue" button after displaying the conversation
-            const continueButton = document.getElementById('proceed-to-ratings');
-            continueButton.classList.remove('hidden');
-            continueButton.onclick = showRatingsPage;
-        }
-
-        function showRatingsPage() {
-            document.getElementById('interaction-page').classList.add('hidden');
-            document.getElementById('ratings-page').classList.remove('hidden');
-
-            const ratingsContainer = document.getElementById('ratings-container');
-            const agentType = agents[currentAgentIndex];
-            document.getElementById('ratings-agent-title').textContent = `${agentType.charAt(0).toUpperCase() + agentType.slice(1)} Agent Follow-Up Questionnaire`;
-
-            ratingsContainer.innerHTML = '';
-
-            Object.entries(followUpQuestions).forEach(([section, questions]) => {
-                const sectionDiv = document.createElement('div');
-                sectionDiv.classList.add('question-group');
-
-                const sectionTitle = document.createElement('h3');
-                sectionTitle.textContent = section;
-                sectionDiv.appendChild(sectionTitle);
-
-                questions.forEach((question, index) => {
-                    const questionDiv = document.createElement('div');
-                    questionDiv.classList.add('likert-row');
-
-                    const questionText = document.createElement('p');
-                    questionText.textContent = question;
-                    questionDiv.appendChild(questionText);
-
-                    const radioGroup = document.createElement('div');
-                    for (let i = 1; i <= 5; i++) {
-                        const radio = document.createElement('input');
-                        radio.type = 'radio';
-                        radio.name = `${section.replace(/\s+/g, '_')}_${index}`;
-                        radio.value = i;
-                        radio.required = true;
-
-                        const label = document.createElement('label');
-                        label.appendChild(radio);
-                        label.appendChild(document.createTextNode(i));
-
-                        radioGroup.appendChild(label);
-                    }
-
-                    questionDiv.appendChild(radioGroup);
-                    sectionDiv.appendChild(questionDiv);
-                });
-
-                ratingsContainer.appendChild(sectionDiv);
-            });
-
-            // Add event listener for form submission
-            const ratingsForm = document.getElementById('ratings-form');
-            ratingsForm.onsubmit = handleRatingSubmission;
-        }
-
-        function handleRatingSubmission(event) {
-            event.preventDefault();
-            const formData = new FormData(event.target);
-            const ratings = Object.fromEntries(formData.entries());
-
-            experimentResults.push({
-                agent: agents[currentAgentIndex],
-                ratings: ratings
-            });
-
-            event.target.reset();
-            currentAgentIndex++;
-
-            if (currentAgentIndex < agents.length) {
-                document.getElementById('ratings-page').classList.add('hidden');
-                document.getElementById('interaction-page').classList.remove('hidden');
-                fetchAgentInteraction();
-            } else {
-                showCompletionPage();
-            }
-        }
-
-        function showCompletionPage() {
-            document.getElementById('ratings-page').classList.add('hidden');
-            document.getElementById('completion-page').classList.remove('hidden');
-            console.log('Experiment Results:', experimentResults);
-        }
-    </script>
 </body>
 </html>

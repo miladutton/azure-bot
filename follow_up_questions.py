@@ -18,9 +18,5 @@ follow_up_questions = {
         "How would you describe the agent’s tone—did it add to or take away from the experience? (1 = Took Away, 5 = Added a Lot)",
         "Do you think the agent’s personality influenced your experience positively? (1 = Strongly Disagree, 5 = Strongly Agree)",
         "How natural or fitting was the agent's tone and style of humor in this conversation? (1 = Very Inappropriate, 5 = Very Appropriate)"
-    ],
-    "Areas for Improvement": [
-        "If you could change one thing about this agent’s style to improve the experience, what would it be? (Free-response)",
-        "What’s one suggestion you’d make to improve the bot experience? (Free-response)"
     ]
 }
