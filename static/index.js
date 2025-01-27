@@ -1,51 +1,135 @@
-const agents = ["professional", "moderate", "friendly"];
-let experimentResults = []; // Stores results from all agents
+const agents = [
+    { 
+        type: "professional", 
+        style: { rate: 0.9, pitch: 1.0 }
+    },
+    { 
+        type: "moderate", 
+        style: { rate: 1.0, pitch: 1.02 }
+    },
+    { 
+        type: "friendly", 
+        style: { rate: 1.2, pitch: 1.05 }
+    }
+];
+
+let currentAgentIndex = 0;
+let currentQuestionIndex = 0;
+let experimentResults = [];
+let synth = window.speechSynthesis;
+let recognition = null;
+
+if ('webkitSpeechRecognition' in window) {
+    recognition = new webkitSpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+}
 
 // Event listeners
 document.getElementById("start-experiment").addEventListener("click", startExperiment);
-console.log("Event listener for Begin Experiment button attached"); // Debug log
-
 document.getElementById("proceed-to-ratings").addEventListener("click", showRatingsPage);
 document.getElementById("ratings-form").addEventListener("submit", handleRatingSubmission);
 
 async function startExperiment() {
-    console.log("Begin Experiment button clicked"); // Debug log
-
+    console.log("Starting experiment with agent:", agents[currentAgentIndex].type);
     document.getElementById("welcome-page").classList.add("hidden");
     document.getElementById("interaction-page").classList.remove("hidden");
-
-    // Set the default title for all agents
-    document.getElementById("agent-title").textContent = "Agent Interaction";
-
-    await fetchAgentInteraction();
+    document.getElementById("agent-title").textContent = `${capitalizeFirstLetter(agents[currentAgentIndex].type)} Agent`;
+    await runAgentInteraction();
 }
 
-async function fetchAgentInteraction() {
+async function runAgentInteraction() {
     const proceedButton = document.getElementById("proceed-to-ratings");
-    proceedButton.disabled = true; // Disable the button initially
-
+    proceedButton.disabled = true;
+    const conversationDisplay = document.getElementById("conversation-display");
+    
     try {
+        // Fetch questions from server
         const response = await fetch("/bot", {
             method: "POST",
             headers: { "Content-Type": "application/json" }
         });
 
         if (!response.ok) throw new Error("Failed to fetch interaction data.");
-
         const data = await response.json();
+        
+        // Speak welcome message
+        await speakText(
+            `Hello, I'm the ${agents[currentAgentIndex].type} agent. I'll be asking you a few questions.`,
+            agents[currentAgentIndex].style
+        );
 
-        // Set the title for all agents
-        document.getElementById("agent-title").textContent = "Agent Interaction";
+        // Ask each question and wait for response
+        for (const question of data.questions) {
+            // Display and speak the question
+            const questionElement = document.createElement("p");
+            questionElement.className = "agent-message";
+            questionElement.textContent = `Agent: ${question}`;
+            conversationDisplay.appendChild(questionElement);
+            
+            await speakText(question, agents[currentAgentIndex].style);
+            
+            // Get user's response
+            const response = await getUserResponse();
+            
+            // Display user's response
+            const responseElement = document.createElement("p");
+            responseElement.className = "user-message";
+            responseElement.textContent = `You: ${response}`;
+            conversationDisplay.appendChild(responseElement);
+        }
 
-        // Update the conversation display
-        const conversationDisplay = document.getElementById("conversation-display");
-        conversationDisplay.innerHTML = `<p>${data.message}</p>`;
+        // Speak thank you message
+        await speakText(
+            `Thank you for your responses. Let's move on to the follow-up questions.`,
+            agents[currentAgentIndex].style
+        );
 
-        // Immediately enable the "Continue" button
         proceedButton.disabled = false;
+        
     } catch (error) {
-        console.error("Error fetching agent interaction:", error);
+        console.error("Error in agent interaction:", error);
+        conversationDisplay.innerHTML += `<p class="error">An error occurred. Please try again.</p>`;
     }
+}
+
+function speakText(text, style) {
+    return new Promise((resolve) => {
+        // Cancel any ongoing speech
+        synth.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = style.rate;
+        utterance.pitch = style.pitch;
+        
+        utterance.onend = () => {
+            resolve();
+        };
+
+        synth.speak(utterance);
+    });
+}
+
+function getUserResponse() {
+    return new Promise((resolve) => {
+        if (recognition) {
+            recognition.onresult = (event) => {
+                const response = event.results[0][0].transcript;
+                resolve(response);
+            };
+            
+            recognition.onerror = () => {
+                resolve("No response recorded");
+            };
+            
+            recognition.start();
+        } else {
+            // Simulate response for testing
+            setTimeout(() => {
+                resolve("Simulated user response");
+            }, 2000);
+        }
+    });
 }
 
 function showRatingsPage() {
@@ -123,36 +207,46 @@ function populateRatingsForm() {
 
 async function handleRatingSubmission(event) {
     event.preventDefault();
-
+    
     const formData = new FormData(event.target);
     const ratings = Object.fromEntries(formData.entries());
-    experimentResults.push(ratings);
+    experimentResults.push({
+        agentType: agents[currentAgentIndex].type,
+        ratings: ratings
+    });
 
     try {
         const response = await fetch("/submit-follow-up", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(ratings)
+            body: JSON.stringify({
+                agentType: agents[currentAgentIndex].type,
+                ratings: ratings
+            })
         });
 
         const data = await response.json();
-
-        if (data.message.includes("next agent")) {
+        
+        // Move to next agent or complete experiment
+        currentAgentIndex++;
+        if (currentAgentIndex < agents.length) {
+            // Reset conversation display for next agent
+            document.getElementById("conversation-display").innerHTML = "";
             document.getElementById("ratings-page").classList.add("hidden");
             document.getElementById("interaction-page").classList.remove("hidden");
-            await fetchAgentInteraction();
+            document.getElementById("agent-title").textContent = 
+                `${capitalizeFirstLetter(agents[currentAgentIndex].type)} Agent`;
+            await runAgentInteraction();
         } else {
+            // Show completion page
             document.getElementById("ratings-page").classList.add("hidden");
             document.getElementById("completion-page").classList.remove("hidden");
-
-            // Generic completion text
-            const completionPage = document.getElementById("completion-page");
-            completionPage.innerHTML = `
-                <h1>Experiment Complete</h1>
-                <p>Thank you for participating!</p>
-            `;
         }
     } catch (error) {
-        console.error("Error submitting follow-up responses:", error);
+        console.error("Error submitting ratings:", error);
     }
+}
+
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
 }
