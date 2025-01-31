@@ -93,22 +93,40 @@ async function runAgentInteraction() {
     }
 }
 
-function speakText(text, style) {
-    return new Promise((resolve) => {
-        // Cancel any ongoing speech
-        synth.cancel();
+async function speakText(text) {
+    return new Promise(async (resolve) => {
+        try {
+            const response = await fetch("/generate-speech", {  // ✅ Use updated endpoint
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: text })
+            });
 
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = style.rate;
-        utterance.pitch = style.pitch;
-        
-        utterance.onend = () => {
+            if (!response.ok) throw new Error("Failed to fetch speech audio.");
+
+            // Convert response to audio and play it
+            const audioBlob = await response.blob();
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const audio = new Audio(audioUrl);
+
+            audio.play()
+                .then(() => {
+                    console.log("🔊 Audio is playing...");
+                    audio.onended = resolve;
+                })
+                .catch(error => {
+                    console.error("Audio play error:", error);
+                    resolve();
+                });
+
+        } catch (error) {
+            console.error("Error fetching speech:", error);
             resolve();
-        };
-
-        synth.speak(utterance);
+        }
     });
 }
+
+
 
 function getUserResponse() {
     return new Promise((resolve) => {
